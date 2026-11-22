@@ -1,0 +1,30 @@
+name: Build
+on: [push, workflow_dispatch]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dezarhivare
+        run: |
+          ls -la
+          ZIP=$(ls *.zip | head -n1)
+          echo "Folosesc: $ZIP"
+          unzip -q "$ZIP"
+      - name: Găsește proiectul
+        id: proj
+        run: echo "dir=$(dirname "$(find . -name build.gradle -not -path './.git/*' | head -n1)")" >> $GITHUB_OUTPUT
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.1.1
+      - name: Build
+        working-directory: ${{ steps.proj.outputs.dir }}
+        run: gradle build --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mooncity_core
+          path: "**/build/libs/*.jar"
